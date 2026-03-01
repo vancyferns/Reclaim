@@ -35,123 +35,122 @@ export default function LandingPage() {
     ];
 
     return (
-        <div className="min-h-screen">
+        <div style={{ minHeight: '100vh' }}>
             <div className="bg-mesh" />
 
             {/* Nav */}
-            <nav className="flex items-center justify-between px-6 py-4 max-w-7xl mx-auto">
-                <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-accent-primary to-emerald-500 flex items-center justify-center text-lg font-bold">
-                        R
+            <nav className="landing-nav">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div className="app-nav" style={{ padding: 0 }}>
+                        <Link to="/" className="brand" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div className="logo" style={{
+                                width: '36px', height: '36px', borderRadius: '12px',
+                                background: 'linear-gradient(135deg, var(--color-accent), var(--color-emerald-500))',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontSize: '1rem', fontWeight: 700
+                            }}>R</div>
+                            <span className="gradient-text-accent" style={{ fontFamily: 'var(--font-display)', fontSize: '1.25rem', fontWeight: 700 }}>
+                                Reclaim
+                            </span>
+                        </Link>
                     </div>
-                    <span className="text-xl font-bold gradient-text-accent" style={{ fontFamily: 'var(--font-display)' }}>
-                        Reclaim
-                    </span>
                 </div>
-                <div className="flex items-center gap-3">
-                    <Link to="/login" className="btn-secondary text-sm no-underline">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <Link to="/login" className="btn-secondary" style={{ fontSize: '0.875rem', padding: '8px 20px' }}>
                         Sign In
                     </Link>
-                    <Link to="/register" className="btn-primary text-sm no-underline">
+                    <Link to="/register" className="btn-primary" style={{ fontSize: '0.875rem', padding: '8px 20px' }}>
                         Get Started
                     </Link>
                 </div>
             </nav>
 
             {/* Hero */}
-            <section className="max-w-4xl mx-auto text-center px-6 py-20 md:py-32">
-                <div className="animate-slide-up">
-                    <div className="inline-block px-4 py-1.5 rounded-full bg-accent-primary/10 border border-accent-primary/20 text-accent-secondary text-sm font-medium mb-6">
-                        🌱 Open Source • Privacy First • Self-Hostable
-                    </div>
+            <section className="landing-hero animate-slide-up">
+                <div style={{
+                    display: 'inline-block', padding: '6px 16px', borderRadius: '9999px',
+                    background: 'rgba(108, 92, 231, 0.08)', border: '1px solid rgba(108, 92, 231, 0.2)',
+                    color: 'var(--color-accent-light)', fontSize: '0.875rem', fontWeight: 500, marginBottom: '24px'
+                }}>
+                    🌱 Open Source • Privacy First • Self-Hostable
+                </div>
 
-                    <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight mb-6" style={{ fontFamily: 'var(--font-display)' }}>
-                        Take Back{' '}
-                        <span className="gradient-text">Control</span>
-                        <br />
-                        Of Your Life
-                    </h1>
+                <h1>
+                    Take Back <span className="gradient-text">Control</span>
+                    <br />
+                    Of Your Life
+                </h1>
 
-                    <p className="text-lg md:text-xl text-text-secondary max-w-2xl mx-auto mb-10 leading-relaxed">
-                        A privacy-respecting accountability platform for individuals who voluntarily seek to
-                        regulate compulsive behavior. No judgment. No surveillance. Just support.
-                    </p>
+                <p className="subtitle">
+                    A privacy-respecting accountability platform for individuals who voluntarily seek to
+                    regulate compulsive behavior. No judgment. No surveillance. Just support.
+                </p>
 
-                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                        <Link to="/register" className="btn-primary text-lg px-10 py-4 no-underline">
-                            Start Your Journey →
-                        </Link>
-                        <a
-                            href="https://github.com/vancyferns/Reclaim"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="btn-secondary text-lg px-10 py-4 no-underline"
-                        >
-                            ⭐ GitHub
-                        </a>
-                    </div>
+                <div className="cta-row">
+                    <Link to="/register" className="btn-primary" style={{ fontSize: '1.1rem', padding: '16px 40px' }}>
+                        Start Your Journey →
+                    </Link>
+                    <a
+                        href="https://github.com/vancyferns/Reclaim"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn-secondary"
+                        style={{ fontSize: '1.1rem', padding: '16px 40px' }}
+                    >
+                        ⭐ GitHub
+                    </a>
                 </div>
             </section>
 
             {/* Features */}
-            <section className="max-w-6xl mx-auto px-6 pb-20">
-                <div className="text-center mb-12">
-                    <h2 className="text-3xl font-bold mb-3" style={{ fontFamily: 'var(--font-display)' }}>
-                        <span className="gradient-text-accent">Built With Purpose</span>
-                    </h2>
-                    <p className="text-text-secondary">
-                        Every feature designed with behavioral science and privacy in mind
-                    </p>
+            <section className="landing-section">
+                <div className="landing-section-title">
+                    <h2><span className="gradient-text-accent">Built With Purpose</span></h2>
+                    <p>Every feature designed with behavioral science and privacy in mind</p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                <div className="features-grid">
                     {features.map((f, i) => (
-                        <div
-                            key={i}
-                            className="glass-card p-6"
-                            style={{ animationDelay: `${i * 0.1}s` }}
-                        >
-                            <div className="text-3xl mb-3">{f.icon}</div>
-                            <h3 className="text-lg font-semibold mb-2">{f.title}</h3>
-                            <p className="text-sm text-text-secondary leading-relaxed">{f.desc}</p>
+                        <div key={i} className="glass-card feature-card">
+                            <div className="icon">{f.icon}</div>
+                            <h3>{f.title}</h3>
+                            <p>{f.desc}</p>
                         </div>
                     ))}
                 </div>
             </section>
 
             {/* Principles */}
-            <section className="max-w-4xl mx-auto px-6 pb-20">
-                <div className="glass-card p-8 md:p-12 text-center border-accent-primary/20">
-                    <h2 className="text-2xl font-bold mb-6" style={{ fontFamily: 'var(--font-display)' }}>
-                        Our Core Principles
-                    </h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-left">
-                        <div className="flex gap-3">
-                            <span className="text-xl">✊</span>
+            <section className="landing-section">
+                <div className="glass-card principles-card">
+                    <h2>Our Core Principles</h2>
+                    <div className="principles-grid">
+                        <div className="principle-item">
+                            <span className="icon">✊</span>
                             <div>
-                                <div className="font-semibold mb-1">Voluntary Participation</div>
-                                <p className="text-sm text-text-secondary">Users explicitly enable every feature. Nothing is forced.</p>
+                                <div className="title">Voluntary Participation</div>
+                                <p className="desc">Users explicitly enable every feature. Nothing is forced.</p>
                             </div>
                         </div>
-                        <div className="flex gap-3">
-                            <span className="text-xl">🔐</span>
+                        <div className="principle-item">
+                            <span className="icon">🔐</span>
                             <div>
-                                <div className="font-semibold mb-1">Privacy First</div>
-                                <p className="text-sm text-text-secondary">No browsing history. No screenshots. No third-party analytics.</p>
+                                <div className="title">Privacy First</div>
+                                <p className="desc">No browsing history. No screenshots. No third-party analytics.</p>
                             </div>
                         </div>
-                        <div className="flex gap-3">
-                            <span className="text-xl">📖</span>
+                        <div className="principle-item">
+                            <span className="icon">📖</span>
                             <div>
-                                <div className="font-semibold mb-1">Full Transparency</div>
-                                <p className="text-sm text-text-secondary">Fully open-source. Audit the code. Host it yourself.</p>
+                                <div className="title">Full Transparency</div>
+                                <p className="desc">Fully open-source. Audit the code. Host it yourself.</p>
                             </div>
                         </div>
-                        <div className="flex gap-3">
-                            <span className="text-xl">🧠</span>
+                        <div className="principle-item">
+                            <span className="icon">🧠</span>
                             <div>
-                                <div className="font-semibold mb-1">Science-Oriented</div>
-                                <p className="text-sm text-text-secondary">Focused on accountability & interruption, not moral policing.</p>
+                                <div className="title">Science-Oriented</div>
+                                <p className="desc">Focused on accountability & interruption, not moral policing.</p>
                             </div>
                         </div>
                     </div>
@@ -159,20 +158,18 @@ export default function LandingPage() {
             </section>
 
             {/* CTA */}
-            <section className="text-center px-6 pb-20">
-                <p className="text-text-secondary text-lg mb-6">
-                    Freedom from compulsive behavior should not be restricted by paywalls.
-                </p>
-                <Link to="/register" className="btn-primary text-lg px-10 py-4 no-underline">
+            <section className="landing-cta">
+                <p>Freedom from compulsive behavior should not be restricted by paywalls.</p>
+                <Link to="/register" className="btn-primary" style={{ fontSize: '1.1rem', padding: '16px 40px' }}>
                     Begin Now — It's Free Forever
                 </Link>
             </section>
 
             {/* Footer */}
-            <footer className="border-t border-white/5 px-6 py-8">
-                <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <div className="flex items-center gap-2 text-text-muted text-sm">
-                        <span className="font-semibold gradient-text-accent">Reclaim</span>
+            <footer className="landing-footer">
+                <div className="landing-footer-inner">
+                    <div className="meta">
+                        <span className="gradient-text-accent" style={{ fontWeight: 600 }}>Reclaim</span>
                         <span>•</span>
                         <span>MIT License</span>
                         <span>•</span>
@@ -182,7 +179,7 @@ export default function LandingPage() {
                         href="https://github.com/vancyferns/Reclaim"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-text-muted hover:text-text-primary text-sm transition-colors no-underline"
+                        style={{ color: 'var(--color-txt-mute)', fontSize: '0.875rem', transition: 'color 0.2s' }}
                     >
                         GitHub →
                     </a>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '../services/api';
 
-const DELAY_SECONDS = 300; // 5 minute delay timer
+const DELAY_SECONDS = 300;
 
 const TECHNIQUES = [
     { id: 'breathing', label: '🫁 Breathing Exercise', desc: 'Guided 4-7-8 breathing' },
@@ -12,7 +12,7 @@ const TECHNIQUES = [
 ];
 
 export default function EmergencyPage() {
-    const [phase, setPhase] = useState('ready'); // ready, technique, timer, complete
+    const [phase, setPhase] = useState('ready');
     const [selectedTechnique, setSelectedTechnique] = useState(null);
     const [timer, setTimer] = useState(DELAY_SECONDS);
     const [sessionId, setSessionId] = useState(null);
@@ -37,7 +37,7 @@ export default function EmergencyPage() {
         try {
             const res = await api.get('/emergency/motivation');
             setMotivation(res.data.prompt);
-        } catch (e) {
+        } catch {
             setMotivation("You are stronger than this moment.");
         }
     };
@@ -63,56 +63,39 @@ export default function EmergencyPage() {
         }
 
         setPhase('technique');
-
-        // Start the delay timer
         setTimer(DELAY_SECONDS);
         timerRef.current = setInterval(() => {
             setTimer((prev) => {
-                if (prev <= 1) {
-                    clearInterval(timerRef.current);
-                    return 0;
-                }
+                if (prev <= 1) { clearInterval(timerRef.current); return 0; }
                 return prev - 1;
             });
         }, 1000);
 
-        // Start breathing animation cycle if breathing technique
         if (technique.id === 'breathing') {
             startBreathingCycle();
         }
     };
 
     const startBreathingCycle = () => {
-        // 4-7-8 breathing: 4s inhale, 7s hold, 8s exhale
         let elapsed = 0;
         breathRef.current = setInterval(() => {
             elapsed++;
-            const cyclePos = elapsed % 19; // 4 + 7 + 8 = 19 seconds per cycle
-            if (cyclePos < 4) {
-                setBreathPhase('inhale');
-            } else if (cyclePos < 11) {
-                setBreathPhase('hold');
-            } else {
-                setBreathPhase('exhale');
-            }
-            if (cyclePos === 0) {
-                setBreathCount((c) => c + 1);
-            }
+            const cyclePos = elapsed % 19;
+            if (cyclePos < 4) setBreathPhase('inhale');
+            else if (cyclePos < 11) setBreathPhase('hold');
+            else setBreathPhase('exhale');
+            if (cyclePos === 0) setBreathCount((c) => c + 1);
         }, 1000);
     };
 
     const completeSession = async (outcome) => {
         clearInterval(timerRef.current);
         clearInterval(breathRef.current);
-
         const durationS = Math.round((Date.now() - startTimeRef.current) / 1000);
 
         if (sessionId) {
-            try {
-                await api.put(`/emergency/${sessionId}/complete`, { outcome, durationS });
-            } catch (e) {
-                console.error('Failed to complete session', e);
-            }
+            try { await api.put(`/emergency/${sessionId}/complete`, { outcome, durationS }); }
+            catch (e) { console.error('Failed to complete session', e); }
         }
 
         setPhase('complete');
@@ -139,60 +122,52 @@ export default function EmergencyPage() {
     // ─── READY PHASE ───
     if (phase === 'ready') {
         return (
-            <div className="max-w-2xl mx-auto space-y-8 py-8">
-                <div className="text-center">
-                    <div className="text-6xl mb-4">🛡️</div>
-                    <h1 className="text-3xl font-bold mb-2" style={{ fontFamily: 'var(--font-display)' }}>
+            <div style={{ maxWidth: '640px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '32px', padding: '32px 0' }}>
+                <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '3.5rem', marginBottom: '16px' }}>🛡️</div>
+                    <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.75rem', fontWeight: 700, marginBottom: '8px' }}>
                         <span className="gradient-text">Emergency Mode</span>
                     </h1>
-                    <p className="text-text-secondary text-lg">
+                    <p className="text-dim" style={{ fontSize: '1.1rem' }}>
                         Feeling an urge? Choose a technique to help you through it.
                     </p>
                 </div>
 
-                {/* Motivation */}
-                <div className="glass-card p-6 text-center border-accent-primary/20">
-                    <p className="text-lg italic text-text-secondary">"{motivation}"</p>
+                <div className="glass-card motivation-card" style={{ borderColor: 'rgba(108, 92, 231, 0.2)' }}>
+                    <p>"{motivation}"</p>
                 </div>
 
-                {/* Technique Selection */}
-                <div className="space-y-3">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {TECHNIQUES.map((technique) => (
                         <button
                             key={technique.id}
                             onClick={() => startEmergency(technique)}
-                            className="glass-card p-5 w-full text-left flex items-center gap-4 cursor-pointer hover:border-accent-primary/30 group"
+                            className="glass-card"
+                            style={{
+                                padding: '20px', width: '100%', textAlign: 'left',
+                                display: 'flex', alignItems: 'center', gap: '16px',
+                                cursor: 'pointer', background: 'rgba(26, 26, 38, 0.4)',
+                                border: '1px solid rgba(255, 255, 255, 0.06)', fontFamily: 'var(--font-body)', color: 'var(--color-txt)'
+                            }}
                         >
-                            <span className="text-3xl group-hover:scale-110 transition-transform">
-                                {technique.label.split(' ')[0]}
-                            </span>
+                            <span style={{ fontSize: '1.75rem' }}>{technique.label.split(' ')[0]}</span>
                             <div>
-                                <div className="font-semibold text-text-primary">
-                                    {technique.label.split(' ').slice(1).join(' ')}
-                                </div>
-                                <div className="text-sm text-text-secondary">{technique.desc}</div>
+                                <div style={{ fontWeight: 600 }}>{technique.label.split(' ').slice(1).join(' ')}</div>
+                                <div className="text-dim" style={{ fontSize: '0.875rem' }}>{technique.desc}</div>
                             </div>
                         </button>
                     ))}
                 </div>
 
-                {/* Recent Sessions */}
                 {history.length > 0 && (
-                    <div className="space-y-3">
-                        <h2 className="text-lg font-semibold text-text-secondary">Recent Sessions</h2>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <h2 className="text-dim" style={{ fontSize: '1.1rem', fontWeight: 600 }}>Recent Sessions</h2>
                         {history.slice(0, 5).map((s) => (
-                            <div key={s.id} className="glass-card p-4 flex items-center justify-between">
-                                <div>
-                                    <span className="text-sm text-text-secondary">
-                                        {new Date(s.timestamp).toLocaleDateString()} • {s.technique}
-                                    </span>
-                                </div>
-                                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${s.outcome === 'resisted'
-                                        ? 'bg-emerald-500/15 text-emerald-400'
-                                        : s.outcome === 'relapsed'
-                                            ? 'bg-rose-500/15 text-rose-400'
-                                            : 'bg-amber-500/15 text-amber-400'
-                                    }`}>
+                            <div key={s.id} className="glass-card" style={{ padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <span className="text-dim" style={{ fontSize: '0.875rem' }}>
+                                    {new Date(s.timestamp).toLocaleDateString()} • {s.technique}
+                                </span>
+                                <span className={`badge ${s.outcome === 'resisted' ? 'badge-green' : s.outcome === 'relapsed' ? 'badge-red' : 'badge-amber'}`}>
                                     {s.outcome}
                                 </span>
                             </div>
@@ -206,56 +181,60 @@ export default function EmergencyPage() {
     // ─── TECHNIQUE PHASE ───
     if (phase === 'technique') {
         return (
-            <div className="max-w-lg mx-auto text-center space-y-8 py-12">
-                {/* Timer */}
-                <div className="glass-card p-8">
-                    <p className="text-text-secondary text-sm mb-2">Delay Timer</p>
-                    <div className="text-5xl font-bold font-[var(--font-mono)] text-accent-secondary mb-2" style={{ fontFamily: 'var(--font-mono)' }}>
+            <div style={{ maxWidth: '540px', margin: '0 auto', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '32px', padding: '48px 0' }}>
+                <div className="glass-card" style={{ padding: '32px' }}>
+                    <p className="text-dim" style={{ fontSize: '0.875rem', marginBottom: '8px' }}>Delay Timer</p>
+                    <div style={{ fontSize: '3rem', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--color-accent-light)', marginBottom: '8px' }}>
                         {formatTime(timer)}
                     </div>
-                    <p className="text-xs text-text-muted">
+                    <p className="text-mute" style={{ fontSize: '0.75rem' }}>
                         {timer > 0 ? 'Wait it out. The urge will pass.' : 'Timer complete. How do you feel?'}
                     </p>
                 </div>
 
-                {/* Breathing Animation */}
                 {selectedTechnique?.id === 'breathing' && (
-                    <div className="space-y-4">
-                        <div className="relative flex items-center justify-center h-48">
-                            <div className={`w-32 h-32 rounded-full bg-gradient-to-br from-accent-primary/30 to-emerald-500/30 breathing-circle flex items-center justify-center`}>
-                                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-accent-primary/50 to-emerald-500/50 breathing-circle flex items-center justify-center" style={{ animationDelay: '0.5s' }}>
-                                    <div className="w-4 h-4 rounded-full bg-accent-primary/80" />
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+                        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '192px' }}>
+                            <div className="breathing-circle" style={{
+                                width: '128px', height: '128px', borderRadius: '50%',
+                                background: 'linear-gradient(135deg, rgba(108,92,231,0.3), rgba(16,185,129,0.3))',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center'
+                            }}>
+                                <div className="breathing-circle" style={{
+                                    width: '64px', height: '64px', borderRadius: '50%',
+                                    background: 'linear-gradient(135deg, rgba(108,92,231,0.5), rgba(16,185,129,0.5))',
+                                    animationDelay: '0.5s', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                }}>
+                                    <div style={{ width: '16px', height: '16px', borderRadius: '50%', background: 'rgba(108,92,231,0.8)' }} />
                                 </div>
                             </div>
                         </div>
-                        <div className="text-2xl font-semibold text-accent-secondary capitalize">
+                        <div className="text-accent-light" style={{ fontSize: '1.5rem', fontWeight: 600 }}>
                             {breathPhase === 'inhale' ? '🫁 Breathe In (4s)' : breathPhase === 'hold' ? '⏸️ Hold (7s)' : '💨 Breathe Out (8s)'}
                         </div>
-                        <p className="text-sm text-text-muted">Cycle {breathCount + 1}</p>
+                        <p className="text-mute" style={{ fontSize: '0.875rem' }}>Cycle {breathCount + 1}</p>
                     </div>
                 )}
 
-                {/* Grounding exercise */}
                 {selectedTechnique?.id === 'grounding' && (
-                    <div className="glass-card p-6 text-left space-y-3">
-                        <h3 className="font-semibold text-accent-secondary">5-4-3-2-1 Grounding</h3>
-                        <p className="text-text-secondary">Name:</p>
-                        <ul className="space-y-2 text-text-secondary">
-                            <li>👁️ <strong className="text-text-primary">5</strong> things you can <strong>see</strong></li>
-                            <li>✋ <strong className="text-text-primary">4</strong> things you can <strong>touch</strong></li>
-                            <li>👂 <strong className="text-text-primary">3</strong> things you can <strong>hear</strong></li>
-                            <li>👃 <strong className="text-text-primary">2</strong> things you can <strong>smell</strong></li>
-                            <li>👅 <strong className="text-text-primary">1</strong> thing you can <strong>taste</strong></li>
+                    <div className="glass-card" style={{ padding: '24px', textAlign: 'left' }}>
+                        <h3 className="text-accent-light" style={{ fontWeight: 600, marginBottom: '12px' }}>5-4-3-2-1 Grounding</h3>
+                        <p className="text-dim" style={{ marginBottom: '8px' }}>Name:</p>
+                        <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '8px', color: 'var(--color-txt-dim)' }}>
+                            <li>👁️ <strong style={{ color: 'var(--color-txt)' }}>5</strong> things you can <strong>see</strong></li>
+                            <li>✋ <strong style={{ color: 'var(--color-txt)' }}>4</strong> things you can <strong>touch</strong></li>
+                            <li>👂 <strong style={{ color: 'var(--color-txt)' }}>3</strong> things you can <strong>hear</strong></li>
+                            <li>👃 <strong style={{ color: 'var(--color-txt)' }}>2</strong> things you can <strong>smell</strong></li>
+                            <li>👅 <strong style={{ color: 'var(--color-txt)' }}>1</strong> thing you can <strong>taste</strong></li>
                         </ul>
                     </div>
                 )}
 
-                {/* Movement */}
                 {selectedTechnique?.id === 'movement' && (
-                    <div className="glass-card p-6 space-y-4">
-                        <div className="text-6xl animate-bounce">🏃</div>
-                        <h3 className="font-semibold text-accent-secondary text-lg">Get Moving!</h3>
-                        <ul className="text-text-secondary space-y-2 text-left">
+                    <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+                        <div style={{ fontSize: '3.5rem' }}>🏃</div>
+                        <h3 className="text-accent-light" style={{ fontSize: '1.1rem', fontWeight: 600 }}>Get Moving!</h3>
+                        <ul style={{ listStyle: 'none', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '8px', color: 'var(--color-txt-dim)' }}>
                             <li>💪 Do 20 push-ups</li>
                             <li>🧎 Do 30 squats</li>
                             <li>🚶 Go for a brisk walk</li>
@@ -264,45 +243,36 @@ export default function EmergencyPage() {
                     </div>
                 )}
 
-                {/* Cold Water */}
                 {selectedTechnique?.id === 'cold_water' && (
-                    <div className="glass-card p-6 space-y-4">
-                        <div className="text-6xl">🧊</div>
-                        <h3 className="font-semibold text-cyan-400 text-lg">Cold Water Technique</h3>
-                        <p className="text-text-secondary">
+                    <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+                        <div style={{ fontSize: '3.5rem' }}>🧊</div>
+                        <h3 className="text-cyan" style={{ fontSize: '1.1rem', fontWeight: 600 }}>Cold Water Technique</h3>
+                        <p className="text-dim">
                             Go splash cold water on your face. The shock activates the mammalian dive reflex,
                             slowing your heart rate and calming your nervous system.
                         </p>
                     </div>
                 )}
 
-                {/* Journaling */}
                 {selectedTechnique?.id === 'journaling' && (
-                    <div className="glass-card p-6 space-y-4">
-                        <div className="text-6xl">📝</div>
-                        <h3 className="font-semibold text-accent-secondary text-lg">Quick Journal</h3>
+                    <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+                        <div style={{ fontSize: '3.5rem' }}>📝</div>
+                        <h3 className="text-accent-light" style={{ fontSize: '1.1rem', fontWeight: 600 }}>Quick Journal</h3>
                         <textarea
-                            className="input-field min-h-[120px] resize-y"
-                            placeholder="Write freely. What are you feeling right now? What triggered this urge? What would your future self say?"
+                            className="input-field"
+                            placeholder="Write freely. What are you feeling right now?"
+                            style={{ minHeight: '120px', resize: 'vertical', width: '100%' }}
                         />
                     </div>
                 )}
 
-                {/* Motivation */}
-                <p className="text-text-secondary italic text-sm">"{motivation}"</p>
+                <p className="text-dim" style={{ fontStyle: 'italic', fontSize: '0.875rem' }}>"{motivation}"</p>
 
-                {/* Action Buttons */}
-                <div className="flex flex-col gap-3">
-                    <button
-                        onClick={() => completeSession('resisted')}
-                        className="btn-primary text-lg py-4"
-                    >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <button onClick={() => completeSession('resisted')} className="btn-primary" style={{ fontSize: '1.1rem', padding: '16px' }}>
                         ✅ I Resisted — Urge Passed
                     </button>
-                    <button
-                        onClick={() => completeSession('relapsed')}
-                        className="btn-danger py-3"
-                    >
+                    <button onClick={() => completeSession('relapsed')} className="btn-danger" style={{ padding: '12px' }}>
                         I couldn't hold on
                     </button>
                 </div>
@@ -312,21 +282,15 @@ export default function EmergencyPage() {
 
     // ─── COMPLETE PHASE ───
     return (
-        <div className="max-w-lg mx-auto text-center space-y-8 py-16 animate-slide-up">
-            <div className="text-7xl">
+        <div className="animate-slide-up" style={{ maxWidth: '540px', margin: '0 auto', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '32px', padding: '64px 0' }}>
+            <div style={{ fontSize: '4.5rem' }}>
                 {history.length > 0 && history[0]?.outcome === 'resisted' ? '🏆' : '🌱'}
             </div>
-            <h1 className="text-3xl font-bold" style={{ fontFamily: 'var(--font-display)' }}>
-                <span className="gradient-text">
-                    {sessionId ? 'Session Complete' : 'Session Recorded'}
-                </span>
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.75rem', fontWeight: 700 }}>
+                <span className="gradient-text">Session Complete</span>
             </h1>
-            <p className="text-text-secondary text-lg max-w-md mx-auto">
-                {motivation}
-            </p>
-            <button onClick={resetSession} className="btn-secondary">
-                ← Back to Emergency Mode
-            </button>
+            <p className="text-dim" style={{ fontSize: '1.1rem', maxWidth: '480px' }}>{motivation}</p>
+            <button onClick={resetSession} className="btn-secondary">← Back to Emergency Mode</button>
         </div>
     );
 }

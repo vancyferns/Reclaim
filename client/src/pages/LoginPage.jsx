@@ -25,35 +25,22 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="auth-page">
             <div className="bg-mesh" />
-
-            <div className="w-full max-w-md animate-slide-up">
+            <div className="auth-wrapper animate-slide-up">
                 {/* Logo */}
-                <div className="text-center mb-8">
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-accent-primary to-emerald-500 flex items-center justify-center text-3xl font-bold mx-auto mb-4 shadow-lg shadow-accent-primary/20">
-                        R
-                    </div>
-                    <h1 className="text-3xl font-bold gradient-text-accent mb-2" style={{ fontFamily: 'var(--font-display)' }}>
-                        Welcome Back
-                    </h1>
-                    <p className="text-text-secondary">
-                        Continue your journey of self-improvement
-                    </p>
+                <div className="auth-logo">
+                    <div className="logo-icon">R</div>
+                    <h1 className="gradient-text-accent">Welcome Back</h1>
+                    <p>Continue your journey of self-improvement</p>
                 </div>
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className="glass-card p-8 space-y-5">
-                    {error && (
-                        <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl px-4 py-3 text-rose-400 text-sm">
-                            {error}
-                        </div>
-                    )}
+                <form onSubmit={handleSubmit} className="glass-card auth-form">
+                    {error && <div className="error-box">{error}</div>}
 
-                    <div>
-                        <label htmlFor="email" className="block text-sm font-medium text-text-secondary mb-2">
-                            Email address
-                        </label>
+                    <div className="form-group">
+                        <label htmlFor="email">Email address</label>
                         <input
                             id="email"
                             type="email"
@@ -66,10 +53,8 @@ export default function LoginPage() {
                         />
                     </div>
 
-                    <div>
-                        <label htmlFor="password" className="block text-sm font-medium text-text-secondary mb-2">
-                            Password
-                        </label>
+                    <div className="form-group">
+                        <label htmlFor="password">Password</label>
                         <input
                             id="password"
                             type="password"
@@ -82,30 +67,19 @@ export default function LoginPage() {
                         />
                     </div>
 
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="btn-primary w-full flex items-center justify-center gap-2"
-                    >
-                        {loading ? (
-                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                            'Sign In'
-                        )}
+                    <button type="submit" disabled={loading} className="btn-primary" style={{ width: '100%', marginTop: '4px' }}>
+                        {loading ? <div className="spinner-sm" /> : 'Sign In'}
                     </button>
 
-                    <p className="text-center text-sm text-text-secondary">
+                    <div className="form-footer">
                         Don't have an account?{' '}
-                        <Link to="/register" className="text-accent-secondary hover:text-accent-primary transition-colors no-underline font-medium">
-                            Create one
-                        </Link>
-                    </p>
+                        <Link to="/register">Create one</Link>
+                    </div>
                 </form>
 
-                {/* Footer note */}
-                <p className="text-center text-xs text-text-muted mt-6">
+                <div className="auth-privacy">
                     🔒 Your data never leaves your server. Fully self-hosted.
-                </p>
+                </div>
             </div>
         </div>
     );
