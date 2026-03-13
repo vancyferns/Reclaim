@@ -14,8 +14,13 @@ export default function DashboardPage() {
     const [moodAfter, setMoodAfter] = useState(3);
     const [submitting, setSubmitting] = useState(false);
     const [motivation, setMotivation] = useState('');
+    const [checkins, setCheckins] = useState([]);
+    const [showCheckins, setShowCheckins] = useState(false);
+    const [checkinSuccess, setCheckinSuccess] = useState(false);
 
     const triggerOptions = ['Stress', 'Boredom', 'Loneliness', 'Anxiety', 'Insomnia', 'Social Media', 'Other'];
+
+    const milestoneThresholds = [7, 14, 30, 60, 90, 180, 365];
 
     useEffect(() => {
         loadData();
@@ -36,6 +41,15 @@ export default function DashboardPage() {
         }
     };
 
+    const loadCheckins = async () => {
+        try {
+            const res = await api.get('/streak/checkins?limit=10');
+            setCheckins(res.data.checkins || []);
+        } catch (err) {
+            console.error('Failed to load checkins:', err);
+        }
+    };
+
     const handleCheckin = async () => {
         try {
             const res = await api.post('/streak/checkin');
@@ -44,6 +58,10 @@ export default function DashboardPage() {
                 currentStreak: res.data.currentStreak,
                 longestStreak: res.data.longestStreak,
             }));
+            setCheckinSuccess(true);
+            setTimeout(() => setCheckinSuccess(false), 3000);
+            // Reload checkins if the panel is open
+            if (showCheckins) loadCheckins();
         } catch (err) {
             console.error('Check-in failed:', err);
         }
@@ -71,6 +89,11 @@ export default function DashboardPage() {
         }
     };
 
+    const toggleCheckins = () => {
+        if (!showCheckins) loadCheckins();
+        setShowCheckins(!showCheckins);
+    };
+
     if (loading) {
         return (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
@@ -81,6 +104,8 @@ export default function DashboardPage() {
 
     const streakDays = streak?.currentStreak || 0;
     const longestDays = streak?.longestStreak || 0;
+    const nextMilestone = milestoneThresholds.find(m => m > streakDays) || milestoneThresholds[milestoneThresholds.length - 1];
+    const milestoneProgress = Math.min((streakDays / nextMilestone) * 100, 100);
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
@@ -94,6 +119,20 @@ export default function DashboardPage() {
                     {streakDays === 0 ? "Every journey begins with a single step." : motivation}
                 </p>
             </div>
+
+            {/* Check-in Success Toast */}
+            {checkinSuccess && (
+                <div className="glass-card animate-slide-up" style={{
+                    padding: '16px 24px', textAlign: 'center',
+                    borderColor: 'rgba(16, 185, 129, 0.3)',
+                    background: 'rgba(16, 185, 129, 0.08)',
+                }}>
+                    <span style={{ fontSize: '1.25rem' }}>✅</span>
+                    <span className="text-emerald" style={{ marginLeft: '8px', fontWeight: 600 }}>
+                        Check-in recorded! Keep going 💪
+                    </span>
+                </div>
+            )}
 
             {/* Stats Grid */}
             <div className="stats-grid">
@@ -118,6 +157,33 @@ export default function DashboardPage() {
                 </div>
             </div>
 
+            {/* Milestone Progress */}
+            <div className="glass-card" style={{ padding: '24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                    <span className="text-dim" style={{ fontSize: '0.875rem', fontWeight: 500 }}>
+                        🎯 Next Milestone: Day {nextMilestone}
+                    </span>
+                    <span className="text-accent-light" style={{ fontSize: '0.875rem', fontWeight: 600 }}>
+                        {streakDays}/{nextMilestone}
+                    </span>
+                </div>
+                <div style={{
+                    width: '100%', height: '10px', borderRadius: '999px',
+                    background: 'rgba(108, 92, 231, 0.1)', overflow: 'hidden',
+                }}>
+                    <div style={{
+                        width: `${milestoneProgress}%`, height: '100%', borderRadius: '999px',
+                        background: 'linear-gradient(90deg, var(--color-accent), var(--color-emerald-500))',
+                        transition: 'width 1s cubic-bezier(0.4, 0, 0.2, 1)',
+                    }} />
+                </div>
+                {streakDays > 0 && (
+                    <p className="text-mute" style={{ fontSize: '0.75rem', marginTop: '8px' }}>
+                        {nextMilestone - streakDays} days to go — you've got this!
+                    </p>
+                )}
+            </div>
+
             {/* Action Buttons */}
             <div className="action-row">
                 <button onClick={handleCheckin} className="btn-primary">
@@ -129,6 +195,60 @@ export default function DashboardPage() {
                 <Link to="/emergency" className="btn-emergency">
                     🛡️ Emergency Mode
                 </Link>
+            </div>
+
+            {/* Check-in History Toggle */}
+            <div>
+                <button
+                    onClick={toggleCheckins}
+                    className="btn-secondary"
+                    style={{ width: '100%', justifyContent: 'center' }}
+                >
+                    {showCheckins ? '▲ Hide Check-in History' : '▼ View Check-in History'}
+                </button>
+
+                {showCheckins && (
+                    <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {checkins.length === 0 ? (
+                            <div className="glass-card" style={{ padding: '32px', textAlign: 'center' }}>
+                                <span className="text-dim" style={{ fontSize: '0.875rem' }}>
+                                    No check-ins yet. Start by clicking "Daily Check-in" above! 🌱
+                                </span>
+                            </div>
+                        ) : (
+                            checkins.map((c) => (
+                                <div key={c.id} className="glass-card" style={{
+                                    padding: '16px 20px', display: 'flex',
+                                    alignItems: 'center', justifyContent: 'space-between',
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        <div style={{
+                                            width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0,
+                                            background: 'linear-gradient(135deg, rgba(108,92,231,0.2), rgba(16,185,129,0.2))',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            fontSize: '0.875rem', fontWeight: 700, color: 'var(--color-accent-light)',
+                                        }}>
+                                            {c.streak_day}
+                                        </div>
+                                        <div>
+                                            <div style={{ fontWeight: 500, fontSize: '0.875rem' }}>
+                                                Day {c.streak_day} Check-in
+                                            </div>
+                                            <div className="text-mute" style={{ fontSize: '0.75rem' }}>
+                                                {new Date(c.checked_at).toLocaleDateString('en-US', {
+                                                    weekday: 'short', month: 'short', day: 'numeric',
+                                                })} at {new Date(c.checked_at).toLocaleTimeString('en-US', {
+                                                    hour: '2-digit', minute: '2-digit',
+                                                })}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <span className="badge badge-green">✓</span>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                )}
             </div>
 
             {/* Relapse Modal */}

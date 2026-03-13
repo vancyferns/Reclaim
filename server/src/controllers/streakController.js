@@ -1,4 +1,75 @@
 const pool = require('../config/database');
+const { sendMilestoneEmail, sendRelapseEmail } = require('../config/email');
+
+const MILESTONE_DAYS = [7, 14, 30, 60, 90, 180, 365];
+
+/**
+ * Check if a milestone was just reached, and notify partners if so.
+ */
+async function checkAndNotifyMilestones(userId, newStreak) {
+    if (!MILESTONE_DAYS.includes(newStreak)) return;
+
+    try {
+        // Get user's display name
+        const userRes = await pool.query(
+            'SELECT display_name FROM users WHERE id = $1',
+            [userId]
+        );
+        if (userRes.rows.length === 0) return;
+
+        const userName = userRes.rows[0].display_name;
+
+        // Get partners who have accepted consent and want milestone notifications
+        const partnersRes = await pool.query(
+            `SELECT partner_email, partner_name FROM partners
+             WHERE user_id = $1 AND consent_status = 'accepted' AND notify_on_milestone = true`,
+            [userId]
+        );
+
+        // Send milestone email to each partner (fire-and-forget)
+        for (const partner of partnersRes.rows) {
+            sendMilestoneEmail({
+                partnerEmail: partner.partner_email,
+                partnerName: partner.partner_name,
+                userName,
+                milestoneDays: newStreak,
+            }).catch((err) => console.error('Milestone email error:', err));
+        }
+    } catch (err) {
+        console.error('Milestone notification error:', err);
+    }
+}
+
+/**
+ * Notify partners about a relapse (only those who opted in).
+ */
+async function notifyPartnersOfRelapse(userId) {
+    try {
+        const userRes = await pool.query(
+            'SELECT display_name FROM users WHERE id = $1',
+            [userId]
+        );
+        if (userRes.rows.length === 0) return;
+
+        const userName = userRes.rows[0].display_name;
+
+        const partnersRes = await pool.query(
+            `SELECT partner_email, partner_name FROM partners
+             WHERE user_id = $1 AND consent_status = 'accepted' AND notify_on_relapse = true`,
+            [userId]
+        );
+
+        for (const partner of partnersRes.rows) {
+            sendRelapseEmail({
+                partnerEmail: partner.partner_email,
+                partnerName: partner.partner_name,
+                userName,
+            }).catch((err) => console.error('Relapse email error:', err));
+        }
+    } catch (err) {
+        console.error('Relapse notification error:', err);
+    }
+}
 
 // Get current streak info
 exports.getStreak = async (req, res) => {
@@ -32,6 +103,13 @@ exports.getStreak = async (req, res) => {
          WHERE user_id = $3`,
                 [newStreak, newLongest, req.user.id]
             );
+
+            // Check for milestones that may have been crossed
+            for (const milestone of MILESTONE_DAYS) {
+                if (milestone > streak.current_streak && milestone <= newStreak) {
+                    checkAndNotifyMilestones(req.user.id, milestone);
+                }
+            }
 
             return res.json({
                 currentStreak: newStreak,
@@ -76,6 +154,16 @@ exports.checkin = async (req, res) => {
             [newStreak, newLongest, req.user.id]
         );
 
+        // Log the check-in to history
+        await pool.query(
+            `INSERT INTO checkins (user_id, streak_day, note)
+       VALUES ($1, $2, $3)`,
+            [req.user.id, newStreak, req.body.note || null]
+        );
+
+        // Check for milestones
+        checkAndNotifyMilestones(req.user.id, newStreak);
+
         res.json({
             message: 'Check-in recorded! Keep going 💪',
             currentStreak: newStreak,
@@ -118,6 +206,9 @@ exports.logRelapse = async (req, res) => {
             'SELECT COUNT(*) as count FROM relapses WHERE user_id = $1',
             [req.user.id]
         );
+
+        // Notify partners who opted in for relapse notifications
+        notifyPartnersOfRelapse(req.user.id);
 
         res.json({
             message: 'Relapse logged. Remember: every moment is a new beginning. 🌱',
@@ -162,6 +253,37 @@ exports.getRelapseHistory = async (req, res) => {
     }
 };
 
+// Get check-in history
+exports.getCheckinHistory = async (req, res) => {
+    try {
+        const limit = Math.min(parseInt(req.query.limit, 10) || 30, 100);
+        const offset = parseInt(req.query.offset, 10) || 0;
+
+        const result = await pool.query(
+            `SELECT id, checked_at, streak_day, note
+       FROM checkins WHERE user_id = $1
+       ORDER BY checked_at DESC
+       LIMIT $2 OFFSET $3`,
+            [req.user.id, limit, offset]
+        );
+
+        const countResult = await pool.query(
+            'SELECT COUNT(*) as count FROM checkins WHERE user_id = $1',
+            [req.user.id]
+        );
+
+        res.json({
+            checkins: result.rows,
+            total: parseInt(countResult.rows[0].count, 10),
+            limit,
+            offset,
+        });
+    } catch (err) {
+        console.error('Get check-in history error:', err);
+        res.status(500).json({ error: 'Failed to fetch check-in history.' });
+    }
+};
+
 // Get streak analytics (weekly/monthly summary)
 exports.getAnalytics = async (req, res) => {
     try {
@@ -200,12 +322,39 @@ exports.getAnalytics = async (req, res) => {
             [req.user.id]
         );
 
+        // Check-in activity for the last 30 days
+        const checkinActivity = await pool.query(
+            `SELECT DATE(checked_at) as date, COUNT(*) as count
+       FROM checkins WHERE user_id = $1 AND checked_at > NOW() - INTERVAL '30 days'
+       GROUP BY DATE(checked_at) ORDER BY date`,
+            [req.user.id]
+        );
+
+        // Weekly summary (relapses per week over last 12 weeks)
+        const weeklyRelapses = await pool.query(
+            `SELECT DATE_TRUNC('week', timestamp) as week, COUNT(*) as count
+       FROM relapses WHERE user_id = $1 AND timestamp > NOW() - INTERVAL '12 weeks'
+       GROUP BY DATE_TRUNC('week', timestamp) ORDER BY week`,
+            [req.user.id]
+        );
+
+        // Time of day analysis
+        const hourlyRelapses = await pool.query(
+            `SELECT EXTRACT(HOUR FROM timestamp) as hour, COUNT(*) as count
+       FROM relapses WHERE user_id = $1
+       GROUP BY EXTRACT(HOUR FROM timestamp) ORDER BY hour`,
+            [req.user.id]
+        );
+
         res.json({
             streak: streak.rows[0] || {},
             totalRelapses: parseInt(total.rows[0].count, 10),
             dailyRelapses: dailyRelapses.rows,
             triggerBreakdown: triggerBreakdown.rows,
             moodAverages: moodAvg.rows[0] || {},
+            checkinActivity: checkinActivity.rows,
+            weeklyRelapses: weeklyRelapses.rows,
+            hourlyRelapses: hourlyRelapses.rows,
         });
     } catch (err) {
         console.error('Get analytics error:', err);

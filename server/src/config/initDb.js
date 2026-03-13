@@ -80,23 +80,38 @@ CREATE INDEX IF NOT EXISTS idx_relapses_user    ON relapses(user_id);
 CREATE INDEX IF NOT EXISTS idx_relapses_time    ON relapses(timestamp);
 CREATE INDEX IF NOT EXISTS idx_partners_user    ON partners(user_id);
 CREATE INDEX IF NOT EXISTS idx_emergency_user   ON emergency_logs(user_id);
+
+-- ─────────────────────────────────────
+-- Daily Check-ins (history log)
+-- ─────────────────────────────────────
+CREATE TABLE IF NOT EXISTS checkins (
+  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id     UUID REFERENCES users(id) ON DELETE CASCADE,
+  checked_at  TIMESTAMPTZ DEFAULT NOW(),
+  streak_day  INTEGER NOT NULL,
+  note        TEXT,
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_checkins_user ON checkins(user_id);
+CREATE INDEX IF NOT EXISTS idx_checkins_time ON checkins(checked_at);
 `;
 
 async function initDatabase() {
-    try {
-        console.log('🔧 Initializing database schema...');
-        await pool.query(initSQL);
-        console.log('✅ Database schema initialized successfully');
-    } catch (err) {
-        console.error('❌ Database initialization failed:', err.message);
-        throw err;
-    } finally {
-        await pool.end();
-    }
+  try {
+    console.log('🔧 Initializing database schema...');
+    await pool.query(initSQL);
+    console.log('✅ Database schema initialized successfully');
+  } catch (err) {
+    console.error('❌ Database initialization failed:', err.message);
+    throw err;
+  } finally {
+    await pool.end();
+  }
 }
 
 if (require.main === module) {
-    initDatabase().then(() => process.exit(0)).catch(() => process.exit(1));
+  initDatabase().then(() => process.exit(0)).catch(() => process.exit(1));
 }
 
 module.exports = { initDatabase, initSQL };

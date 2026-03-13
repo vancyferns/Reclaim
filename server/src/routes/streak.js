@@ -19,6 +19,9 @@ router.post('/relapse', streakController.logRelapse);
 // GET /api/streak/history
 router.get('/history', streakController.getRelapseHistory);
 
+// GET /api/streak/checkins
+router.get('/checkins', streakController.getCheckinHistory);
+
 // GET /api/streak/analytics
 router.get('/analytics', streakController.getAnalytics);
 

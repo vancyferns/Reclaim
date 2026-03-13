@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const pool = require('../config/database');
+const { sendConsentEmail } = require('../config/email');
 
 // Add an accountability partner
 exports.addPartner = async (req, res) => {
@@ -33,7 +34,20 @@ exports.addPartner = async (req, res) => {
             ]
         );
 
-        // TODO: Send consent email to partner
+        // Get user's display name for the email
+        const userRes = await pool.query(
+            'SELECT display_name FROM users WHERE id = $1',
+            [req.user.id]
+        );
+        const userName = userRes.rows[0]?.display_name || 'A Reclaim user';
+
+        // Send consent email to partner
+        sendConsentEmail({
+            partnerEmail: partnerEmail.toLowerCase(),
+            partnerName: partnerName || null,
+            userName,
+            consentToken,
+        }).catch((err) => console.error('Consent email error:', err));
 
         res.status(201).json({
             message: 'Partner added. A consent request will be sent to their email.',
